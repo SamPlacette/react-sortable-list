@@ -21,6 +21,11 @@ React.render(<SortableList data={colors} />, document.getElementById("container"
 ## Styles
 
 react-sortable-list can be used with your own custom styles. A minimal sortable-list.css style sheet is included as a guide.
+Class names may be overridden using the ``placeholderClassName`` and ``listItemClassName`` props.
+
+## Sortable React Components
+
+Any set of React components may be specified as the ``data`` prop. An example is included.
 
 ## Development
     

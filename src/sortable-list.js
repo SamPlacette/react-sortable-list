@@ -1,21 +1,32 @@
-import React from 'react'
+"use strict";
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
 
 /**
  * Sortable List module
  * A sortable list component using html5 drag and drop api.
 **/
 
-let placeholder = document.createElement("li");
-placeholder.className = "placeholder";
+var placeholder = document.createElement("li");
 
-let SortableList = React.createClass({
-  getInitialState: function() {
-    return {data: this.props.data};
+function isSortableListItem(element) {
+  return !!(element && element.className && element.className.match(/^react-sortable/))
+}
+
+var SortableList = _react2["default"].createClass({
+  displayName: "SortableList",
+
+  getInitialState: function getInitialState() {
+    return { data: this.props.data };
   },
   /** 
    * On drag start, set data.
   **/
-  dragStart: function(e) {
+  dragStart: function dragStart(e) {
     this.dragged = e.currentTarget;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData("text/html", e.currentTarget);
@@ -23,53 +34,61 @@ let SortableList = React.createClass({
   /** 
    * On drag end, update the data state.
   **/
-  dragEnd: function(e) {
-    this.dragged.style.display = "block";
+  dragEnd: function dragEnd(e) {
+    this.dragged.style.display = ''
     this.dragged.parentNode.removeChild(placeholder);
-    let data = this.state.data;
-    let from = Number(this.dragged.dataset.id);
-    let to = Number(this.over.dataset.id);
-    if(from < to) to--;
-    if(this.nodePlacement == "after") to++;
+    var data = this.state.data;
+    var from = Number(this.dragged.dataset.id);
+    var to = Number(this.over.dataset.id);
+    if (from < to) to--;
+    if (this.nodePlacement == "after") to++;
     data.splice(to, 0, data.splice(from, 1)[0]);
-    this.setState({data: data});
+    this.setState({ data: data });
   },
   /** 
    * On drag over, update items.
   **/
-  dragOver: function(e) {
+  dragOver: function dragOver(e) {
     e.preventDefault();
-    this.dragged.style.display = "none";
-    if(e.target.className == "placeholder") return;
-    this.over = e.target;
-    let relY = e.clientY - this.over.offsetTop;
-    let height = this.over.offsetHeight / 2;
-    let parent = e.target.parentNode;
-    
-    if(relY > height) {
-      this.nodePlacement = "after";
-      parent.insertBefore(placeholder, e.target.nextElementSibling);
+    var targetNode = e.target
+    while (!isSortableListItem(targetNode) && targetNode.parentNode) {
+      targetNode = targetNode.parentNode
     }
-    else if(relY < height) {
-      this.nodePlacement = "before"
-      parent.insertBefore(placeholder, e.target);
+    if (!isSortableListItem(targetNode)) { return }
+    this.dragged.style.display = "none";
+    this.over = targetNode;
+    var relY = e.clientY - this.over.offsetTop;
+    var height = this.over.offsetHeight / 2;
+    var parent = targetNode.parentNode;
+
+    placeholder.className = this.props.placeholderClassName || "placeholder"
+    if (relY > height) {
+      this.nodePlacement = "after";
+      parent.insertBefore(placeholder, targetNode.nextElementSibling);
+    } else if (relY < height) {
+      this.nodePlacement = "before";
+      parent.insertBefore(placeholder, targetNode);
     }
   },
-  render: function() {
-    var listItems = this.state.data.map((function(item, i) {
-      return (
-
-          <li className="react-sortable" data-id={i}
-              key={i}
-              draggable="true"
-              onDragEnd={this.dragEnd}
-              onDragStart={this.dragStart}>
-            {item}
-          </li>
+  render: function render() {
+    var listItems = this.state.data.map((function (item, i) {
+      return _react2["default"].createElement(
+        "li",
+        { className: "react-sortable " + (this.props.listItemClassName || ''),
+          "data-id": i,
+          key: i,
+          draggable: "true",
+          onDragEnd: this.dragEnd,
+          onDragStart: this.dragStart },
+        item
       );
     }).bind(this));
 
-    return <ul onDragOver={this.dragOver}>{listItems}</ul>
+    return _react2["default"].createElement(
+      "ul",
+      { onDragOver: this.dragOver },
+      listItems
+    );
   }
 });
 

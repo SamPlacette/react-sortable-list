@@ -59,6 +59,33 @@
 	var colors = ["Red", "Green", "Blue", "Yellow", "Black", "White", "Orange"];
 	_react2['default'].render(_react2['default'].createElement(_libSortableList2['default'], { data: colors }), document.getElementById("container"));
 
+	function renderLetterImageSrc(letter) {
+	  var context = document.createElement('canvas').getContext('2d');
+	  context.canvas.width = 50;
+	  context.canvas.height = 65;
+	  context.font = '48px sans-serif';
+	  context.fillStyle = 'rgb(' + [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)] + ')';
+	  context.fillText(letter, 0, 50);
+	  return context.canvas.toDataURL();
+	}
+
+	var letterImages = new Array(26);
+	for (var i = 0; i < 26; i++) {
+	  letterImages[i] = renderLetterImageSrc(String.fromCharCode(97 + i));
+	}
+
+	var FancyImage = _react2['default'].createClass({
+	  displayName: 'FancyImage',
+
+	  render: function render() {
+	    return _react2['default'].createElement('img', { src: this.props.src });
+	  }
+	});
+	var fancyImageSet = letterImages.map(function (imageSrc, index) {
+	  return _react2['default'].createElement(FancyImage, { key: index, src: imageSrc });
+	});
+	_react2['default'].render(_react2['default'].createElement(_libSortableList2['default'], { data: fancyImageSet, placeholderClassName: 'fancy-placeholder', listItemClassName: 'fancy-list-item' }), document.getElementById("fancy-container"));
+
 /***/ },
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
@@ -7958,6 +7985,10 @@
 	  }
 	};
 
+	function registerNullComponentID() {
+	  ReactEmptyComponentRegistry.registerNullComponentID(this._rootNodeID);
+	}
+
 	var ReactEmptyComponent = function (instantiate) {
 	  this._currentElement = null;
 	  this._rootNodeID = null;
@@ -7966,7 +7997,7 @@
 	assign(ReactEmptyComponent.prototype, {
 	  construct: function (element) {},
 	  mountComponent: function (rootID, transaction, context) {
-	    ReactEmptyComponentRegistry.registerNullComponentID(rootID);
+	    transaction.getReactMountReady().enqueue(registerNullComponentID, this);
 	    this._rootNodeID = rootID;
 	    return ReactReconciler.mountComponent(this._renderedComponent, rootID, transaction, context);
 	  },
@@ -18689,7 +18720,7 @@
 
 	'use strict';
 
-	module.exports = '0.14.7';
+	module.exports = '0.14.8';
 
 /***/ },
 /* 147 */
@@ -19657,7 +19688,13 @@
 
 	"use strict";
 
-	var React = __webpack_require__(1);
+	function _interopRequireDefault(obj) {
+	  return obj && obj.__esModule ? obj : { "default": obj };
+	}
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
 
 	/**
 	 * Sortable List module
@@ -19665,9 +19702,14 @@
 	**/
 
 	var placeholder = document.createElement("li");
-	placeholder.className = "placeholder";
 
-	var SortableList = React.createClass({ displayName: "SortableList",
+	function isSortableListItem(element) {
+	  return !!(element && element.className && element.className.match(/^react-sortable/));
+	}
+
+	var SortableList = _react2["default"].createClass({
+	  displayName: "SortableList",
+
 	  getInitialState: function getInitialState() {
 	    return { data: this.props.data };
 	  },
@@ -19683,7 +19725,7 @@
 	   * On drag end, update the data state.
 	  **/
 	  dragEnd: function dragEnd(e) {
-	    this.dragged.style.display = "block";
+	    this.dragged.style.display = '';
 	    this.dragged.parentNode.removeChild(placeholder);
 	    var data = this.state.data;
 	    var from = Number(this.dragged.dataset.id);
@@ -19698,31 +19740,39 @@
 	  **/
 	  dragOver: function dragOver(e) {
 	    e.preventDefault();
+	    var targetNode = e.target;
+	    while (!isSortableListItem(targetNode) && targetNode.parentNode) {
+	      targetNode = targetNode.parentNode;
+	    }
+	    if (!isSortableListItem(targetNode)) {
+	      return;
+	    }
 	    this.dragged.style.display = "none";
-	    if (e.target.className == "placeholder") return;
-	    this.over = e.target;
+	    this.over = targetNode;
 	    var relY = e.clientY - this.over.offsetTop;
 	    var height = this.over.offsetHeight / 2;
-	    var parent = e.target.parentNode;
+	    var parent = targetNode.parentNode;
 
+	    placeholder.className = this.props.placeholderClassName || "placeholder";
 	    if (relY > height) {
 	      this.nodePlacement = "after";
-	      parent.insertBefore(placeholder, e.target.nextElementSibling);
+	      parent.insertBefore(placeholder, targetNode.nextElementSibling);
 	    } else if (relY < height) {
 	      this.nodePlacement = "before";
-	      parent.insertBefore(placeholder, e.target);
+	      parent.insertBefore(placeholder, targetNode);
 	    }
 	  },
 	  render: function render() {
 	    var listItems = this.state.data.map((function (item, i) {
-	      return React.createElement("li", { className: "react-sortable", "data-id": i,
+	      return _react2["default"].createElement("li", { className: "react-sortable " + (this.props.listItemClassName || ''),
+	        "data-id": i,
 	        key: i,
 	        draggable: "true",
 	        onDragEnd: this.dragEnd,
 	        onDragStart: this.dragStart }, item);
 	    }).bind(this));
 
-	    return React.createElement("ul", { onDragOver: this.dragOver }, listItems);
+	    return _react2["default"].createElement("ul", { onDragOver: this.dragOver }, listItems);
 	  }
 	});
 
